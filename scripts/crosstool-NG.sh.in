@@ -227,7 +227,7 @@ CT_SYS_REVISION=$(uname -r)
 CT_SYS_OS=$(uname -s)
 CT_SYS_MACHINE=$(uname -m)
 CT_SYS_PROCESSOR=$(uname -p)
-CT_SYS_GCC=$(gcc -dumpversion)
+CT_SYS_GCC=$(${CC} -dumpversion)
 CT_SYS_TARGET=$(CT_DoConfigGuess)
 CT_TOOLCHAIN_ID="crosstool-${CT_VERSION} build ${CT_STAR_DATE_HUMAN} by ${CT_SYS_USER}@${CT_SYS_HOSTNAME}"
 
@@ -424,17 +424,26 @@ if [ -z "${CT_RESTART}" ]; then
             # This is needed, because some tools have a prefix and
             # a suffix (eg. gcc), while others may have only one,
             # or even none (eg. binutils)
-            where=$(CT_Which "${t}${tool}${!s}")
-            [ -z "${where}" ] && where=$(CT_Which "${t}${tool}")
+            toolcmd="${tool}"
+            if [ "${toolcmd}" == "gcc" ]; then
+                    toolcmd="${CC}"
+            fi
+            if [ "${toolcmd}" == "g++" ]; then
+                    toolcmd="${CXX}"
+            fi
+
+	    echo "Using toolcmd ${toolcmd}"
+            where=$(CT_Which "${t}${toolcmd}${!s}")
+            [ -z "${where}" ] && where=$(CT_Which "${t}${toolcmd}")
             if [    -z "${where}"                         \
                  -a \(    "${m}" = "BUILD"                \
                        -o "${CT_REAL_BUILD}" = "${!r}" \) ]; then
-                where=$(CT_Which "${tool}${!s}")
+                where=$(CT_Which "${toolcmd}${!s}")
             fi
             if [ -z "${where}"                            \
                  -a \(    "${m}" = "BUILD"                \
                        -o "${CT_REAL_BUILD}" = "${!r}" \) ]; then
-                where=$(CT_Which "${tool}")
+                where=$(CT_Which "${toolcmd}")
             fi
 
             # Not all tools are available for all platforms, but some are required.
